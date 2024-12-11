@@ -5,8 +5,7 @@ include_directories("include")
 set(CMAKE_CXX_STANDARD 20)
 
 file(GLOB SOURCES
-        "src/main.cpp"
         "src/PeopleFinder/*.cpp"
-        # Add other directories as needed
 )
-add_executable(tp2 ${SOURCES})
+add_executable(tp2 src/main.cpp ${SOURCES})
+add_executable(tp2_test tests/main.cpp ${SOURCES})

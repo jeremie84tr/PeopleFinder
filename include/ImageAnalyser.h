@@ -5,8 +5,8 @@
 
 #ifndef IMAGEANALYSER_H
 #define IMAGEANALYSER_H
+
 #include "image.h"
-#include "stb/stb_image.h"
 #include <vector>
 
 class ImageAnalyser {
@@ -17,6 +17,8 @@ public:
     ImageAnalyser(Image);
     void LoadImage(const char*);
     std::vector<Image*> findHead();
+    void SaveImage(const char*);
+    Image* getImage();
 };
 
 
