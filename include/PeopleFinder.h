@@ -5,7 +5,7 @@
 
 #ifndef PEOPLEFINDER_H
 #define PEOPLEFINDER_H
-
+#include <Image.h>
 
 
 class PeopleFinder {

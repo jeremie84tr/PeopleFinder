@@ -20,6 +20,7 @@ class Image {
 
 public:
     Image(int, int, int, unsigned char*);
+    Image* edgeDetection();
     Image* getChannel(channel);
     Image* crop(int x, int y, int width, int height);
     void save(const char*);

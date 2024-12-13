@@ -15,6 +15,71 @@ Image::Image(int width, int height, int channels, unsigned char* data) {
     this->data = data;
 }
 
+void remplirVecteur(int vecteurId, int comparaisonI, int comparaisonJ, int i, int j, long* vecteur, unsigned char* data, int channels, int width, int height) {
+    if (i > comparaisonI && i < height + comparaisonI && j > comparaisonJ && j < width + comparaisonJ) {
+        int iDataChanneled = ((i - comparaisonI) * width + (j - comparaisonJ)) * channels;
+        vecteur[vecteurId] = 0;
+        if (channels >= 1) {//monochrome
+            vecteur[vecteurId] += data[iDataChanneled] * data[iDataChanneled];
+        }
+        if (channels > 2) {//pas monochrome pas alpha
+            vecteur[vecteurId] += data[iDataChanneled + 1] * data[iDataChanneled + 1];
+        }
+        if (channels >= 3) {
+            vecteur[vecteurId] += data[iDataChanneled + 2] * data[iDataChanneled + 2];
+        }
+    } else {
+        vecteur[vecteurId] = -1;
+    }
+}
+
+Image *Image::edgeDetection() {
+    long size = this->width * this->height;
+    unsigned char data[size];
+    int nbVecteurs;
+    int totVecteurs;
+    long vecteurCouleur[9];
+    for (int i=0; i<this->height; i++) {
+        for (int j=0; j<this->width; j++) {
+            remplirVecteur(0,-1,0, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
+            remplirVecteur(1,-1,-1, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
+            remplirVecteur(2,-1,1, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
+            remplirVecteur(3,1,0, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
+            remplirVecteur(4,1,-1, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
+            remplirVecteur(5,1,1, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
+            remplirVecteur(6,0,0, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
+            remplirVecteur(7,0,-1, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
+            remplirVecteur(8,0,1, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
+
+            nbVecteurs = 0;
+            totVecteurs = 0;
+            for (int vecteurId=0; vecteurId<9; vecteurId++) {
+                if (vecteurCouleur[vecteurId] != -1) {
+                    totVecteurs += vecteurCouleur[vecteurId];
+                    nbVecteurs++;
+                }
+            }
+            if (nbVecteurs != 0) {
+                int result = totVecteurs / nbVecteurs;
+                if (vecteurCouleur[4] == result) {
+                    data[i * this->width + j] = 0;
+                } else {
+                    int val = (255 - vecteurCouleur[4] / abs(result - vecteurCouleur[4]) * 40);
+                    if (val < 0) {
+                        data[i * this->width + j] = 0 ;
+                    } else {
+                        data[i * this->width + j] = val ;
+                    }
+                }
+            } else {
+                data[i * this->width + j] = 128;
+            }
+        }
+    }
+    return new Image(this->width,this->height,1,data);
+}
+
+
 /**
  *
  * @param channel the channel you want to get from the image
@@ -26,11 +91,12 @@ Image* Image::getChannel(channel channel) {
     }
     unsigned char data[this->width * this->height];
     enum channel defChannel;
-    if (this->channels == 2) { //Image en noir et blanc avec alpha
+    if (this->channels == 2) {
+        //Image en noir et blanc avec alpha
         if (channel == alpha) {
-            defChannel = red;
-        } else {
             defChannel = green;
+        } else {
+            defChannel = red;
         }
     } else { //Image standard
         defChannel = channel;
@@ -38,7 +104,11 @@ Image* Image::getChannel(channel channel) {
     int iChannel;
     for (int i = 0; i < width * height; i++) {
         iChannel = i * this->channels;
-        data[i] = this->data[iChannel + defChannel];
+        if (this->channels == 3 && channel == alpha) {
+            data[i] = 255;
+        } else {
+            data[i] = this->data[iChannel + defChannel];
+        }
     }
     return new Image(this->width,this->height,1,data);
 }
@@ -64,7 +134,7 @@ Image *Image::crop(int x, int y, int width, int height) {
     }
     int oobw = 0; //Out Of Bounds W -> after picture width
     if (x + width > this->width) {
-        oobw = this->width - x - width;
+        oobw = x + width - this->width;
     }
     int ooby = 0; //Out Of Bounds Y -> before picture height
     if (y < 0) {
@@ -72,31 +142,33 @@ Image *Image::crop(int x, int y, int width, int height) {
     }
     int oobh = 0; //Out Of Bounds H -> after picture height
     if (y + height > this->height) {
-        oobh = this->height - y - height;
+        oobh = y + height - this->height;
     }
 
     int iChannel;
     int iData = 0;
     for (int oob = 0; oob < ooby; oob++) {//Black generated by default for Out Of Bounds Y
-        for (int channel = 0; channel < this->channels; channel++) {
-            data[iData++] = 0;
+        for (int j = 0; j < width; j++) {
+            for (int channel = 0; channel < this->channels; channel++) {
+                data[iData++] = 0;
+            }
         }
     }
     for (int i = y; i < y + height; i++) {
-        if (iData == width * height * channels or i > this->height) {//The crop is full or the image is out of bounds
+        if (iData == width * height * channels or i >= this->height) {//The crop is full or the image is out of bounds
             break;
         }
-        if (y > 0) {
+        if (i >= 0) {
             for (int oob = 0; oob < oobx; oob++) {//Black generated by default for Out Of Bounds X for each line
                 for (int channel = 0; channel < this->channels; channel++) {
                     data[iData++] = 0;
                 }
             }
             for (int j = x; j < x + width; j++) {//the line iteration
-                if (j > this->width) {//the image line is full
+                if (j >= this->width) {//the image line is full
                     break;
                 }
-                if (x > 0) {
+                if (j >= 0) {
                     iChannel = (i * this->width + j) * this->channels;
                     for (int channel = 0; channel < this->channels; channel++) {
                         data[iData++] = this->data[iChannel + channel];
@@ -111,8 +183,10 @@ Image *Image::crop(int x, int y, int width, int height) {
         }
     }
     for (int oob = 0; oob < oobh; oob++) {//Black generated by default for Out Of Bounds H
-        for (int channel = 0; channel < this->channels; channel++) {
-            data[iData++] = 0;
+        for (int j = 0; j < width; j++) {
+            for (int channel = 0; channel < this->channels; channel++) {
+                data[iData++] = 0;
+            }
         }
     }
     return new Image(width, height, this->channels, data);
