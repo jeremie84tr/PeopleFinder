@@ -4,6 +4,7 @@
 
 #ifndef IMAGE_H
 #define IMAGE_H
+#include "opencv2/core/mat.hpp"
 
 enum channel {
   red = 0,
@@ -20,6 +21,7 @@ class Image {
 
 public:
     Image(int, int, int, unsigned char*);
+    cv::Mat* getMat();
     Image* edgeDetection();
     Image* getChannel(channel);
     Image* crop(int x, int y, int width, int height);

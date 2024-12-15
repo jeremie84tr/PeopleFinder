@@ -15,6 +15,31 @@ Image::Image(int width, int height, int channels, unsigned char* data) {
     this->data = data;
 }
 
+cv::Mat* Image::getMat() {
+    // Vérifie si les données existent
+    if (data == nullptr) {
+        return nullptr; // Retourne un pointeur nul si aucune donnée n'est disponible
+    }
+
+    // Détermine le type de Mat en fonction du nombre de canaux
+    int type;
+    if (channels == 1) {
+        type = CV_8UC1; // Image en niveaux de gris
+    } else if (channels == 3) {
+        type = CV_8UC3; // Image couleur RGB
+    } else if (channels == 4) {
+        type = CV_8UC4; // Image couleur avec transparence (RGBA)
+    } else {
+        throw std::invalid_argument("Unsupported number of channels");
+    }
+
+    // Crée une nouvelle instance de cv::Mat
+    cv::Mat* ret = new cv::Mat(height, width, type, data);
+
+    return ret;
+}
+
+
 void remplirVecteur(int vecteurId, int comparaisonI, int comparaisonJ, int i, int j, long* vecteur, unsigned char* data, int channels, int width, int height) {
     if (i > comparaisonI && i < height + comparaisonI && j > comparaisonJ && j < width + comparaisonJ) {
         int iDataChanneled = ((i - comparaisonI) * width + (j - comparaisonJ)) * channels;
@@ -44,12 +69,12 @@ Image *Image::edgeDetection() {
             remplirVecteur(0,-1,0, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
             remplirVecteur(1,-1,-1, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
             remplirVecteur(2,-1,1, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
-            remplirVecteur(3,1,0, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
-            remplirVecteur(4,1,-1, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
-            remplirVecteur(5,1,1, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
-            remplirVecteur(6,0,0, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
-            remplirVecteur(7,0,-1, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
-            remplirVecteur(8,0,1, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
+            remplirVecteur(3,0,-1, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
+            remplirVecteur(4,0,0, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
+            remplirVecteur(5,0,1, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
+            remplirVecteur(6,1,0, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
+            remplirVecteur(7,1,-1, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
+            remplirVecteur(8,1,1, i, j, vecteurCouleur, this->data, this->channels, this->width, this->height);
 
             nbVecteurs = 0;
             totVecteurs = 0;
@@ -64,7 +89,7 @@ Image *Image::edgeDetection() {
                 if (vecteurCouleur[4] == result) {
                     data[i * this->width + j] = 0;
                 } else {
-                    int val = (255 - vecteurCouleur[4] / abs(result - vecteurCouleur[4]) * 40);
+                    int val = (255 - vecteurCouleur[4] / abs(result - vecteurCouleur[4]) * nbVecteurs * 5);
                     if (val < 0) {
                         data[i * this->width + j] = 0 ;
                     } else {
