@@ -7,16 +7,27 @@
 #define IMAGEANALYSER_H
 
 #include "image.h"
+#include "opencv2/opencv.hpp"
 #include <vector>
 
 class ImageAnalyser {
-    Image* image;
+    Image image;
+    int actualX;
+    int actualY;
+    int actualWidth;
+    int actualHeight;
 
 public:
     ImageAnalyser();
+
+    ImageAnalyser(Image *image);
+
     ImageAnalyser(Image);
     void LoadImage(const char*);
-    std::vector<Image*> findHead();
+    void LoadImage(cv::Mat);
+    double getCoef(double, double, double);
+    std::vector<Image> findHead();
+    Image getZoomedFaces(double);
     void SaveImage(const char*);
     Image* getImage();
 };

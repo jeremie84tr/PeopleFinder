@@ -5,11 +5,25 @@
 
 #ifndef PEOPLEFINDER_H
 #define PEOPLEFINDER_H
-#include <Image.h>
+#include <string>
+#include "ImageAnalyser.h"
 
 
 class PeopleFinder {
+    std::string* arg;
+    std::string* description;
+    std::string* argvalues;
+    ImageAnalyser imageAnalyser;
 
+    bool useCamera;
+    char* outputDirectory;
+
+    void printArgs();
+    int findArg(char* arg);
+    int runArg(int argn);
+public:
+    PeopleFinder();
+    int runArgs(int argc, char** argv);
 };
 
 
