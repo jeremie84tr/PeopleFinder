@@ -11,11 +11,13 @@
 #include <vector>
 
 class ImageAnalyser {
-    Image image;
+    Image *image;
     int actualX;
     int actualY;
     int actualWidth;
     int actualHeight;
+    cv::CascadeClassifier face_cascade;
+    bool face_cascade_loaded;
 
 public:
     ImageAnalyser();
@@ -26,8 +28,8 @@ public:
     void LoadImage(const char*);
     void LoadImage(cv::Mat);
     double getCoef(double, double, double);
-    std::vector<Image> findHead();
-    Image getZoomedFaces(double);
+    std::vector<Image*> findHead();
+    Image* getZoomedFaces(double);
     void SaveImage(const char*);
     Image* getImage();
 };

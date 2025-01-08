@@ -20,6 +20,12 @@ Image::Image(int width, int height, int channels, unsigned char* data) {
     }
 }
 
+Image::~Image() {
+    std::cout << "suppression image" << std::endl;
+    delete[] this->data;
+    this->data = nullptr;
+}
+
 cv::Mat* Image::getMat() {
     // Vérifie si les données existent
     if (data == nullptr) {
@@ -39,9 +45,7 @@ cv::Mat* Image::getMat() {
     }
 
     // Crée une nouvelle instance de cv::Mat
-    cv::Mat* ret = new cv::Mat(height, width, type, data);
-
-    return ret;
+    return new cv::Mat(height, width, type, data);
 }
 
 
@@ -63,7 +67,7 @@ void remplirVecteur(int vecteurId, int comparaisonI, int comparaisonJ, int i, in
     }
 }
 
-Image Image::edgeDetection() {
+Image* Image::edgeDetection() {
     long size = this->width * this->height;
     unsigned char data[size];
     int nbVecteurs;
@@ -106,7 +110,7 @@ Image Image::edgeDetection() {
             }
         }
     }
-    return Image(this->width,this->height,1,data);
+    return new Image(this->width,this->height,1,data);
 }
 
 
@@ -115,9 +119,9 @@ Image Image::edgeDetection() {
  * @param channel the channel you want to get from the image
  * @return the image grayscaled to the channel wanted
  */
-Image Image::getChannel(channel channel) {
+Image* Image::getChannel(channel channel) {
     if (this->channels == 1) { //Image en noir et blanc
-        return *this;
+        return this;
     }
     unsigned char* data = new unsigned char[this->width * this->height];
     enum channel defChannel;
@@ -140,7 +144,7 @@ Image Image::getChannel(channel channel) {
             data[i] = this->data[iChannel + defChannel];
         }
     }
-    return Image(this->width,this->height,1,data);
+    return new Image(this->width,this->height,1,data);
 }
 
 int Image::getWidth() {
@@ -161,9 +165,9 @@ int Image::getHeight() {
  * @param height the height of your crop
  * @return the image cropped or enlarged
  */
-Image Image::crop(int x, int y, int width, int height) {
+Image* Image::crop(int x, int y, int width, int height) {
     if (width <= 0 or height <= 0) {
-        return Image(0,0,0,nullptr);
+        return new Image(0,0,0,nullptr);
     }
     long dimensions = width * height * this->channels;
     unsigned char* data = new unsigned char[dimensions];
@@ -230,7 +234,10 @@ Image Image::crop(int x, int y, int width, int height) {
             }
         }
     }
-    return Image(width, height, this->channels, data);
+
+    Image* ret = new Image(width, height, this->channels, data);
+    delete[] data;
+    return ret;
 }
 
 /**

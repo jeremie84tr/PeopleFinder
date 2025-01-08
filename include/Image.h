@@ -21,12 +21,13 @@ class Image {
 
 public:
     Image(int, int, int, unsigned char*);
+    ~Image();
     cv::Mat* getMat();
-    Image edgeDetection();
-    Image getChannel(channel);
+    Image* edgeDetection();
+    Image* getChannel(channel);
     int getWidth();
     int getHeight();
-    Image crop(int x, int y, int width, int height);
+    Image* crop(int x, int y, int width, int height);
     void save(const char*);
 };
 

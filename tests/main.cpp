@@ -12,7 +12,7 @@ int main() {
     sourceName += file + ".jpg";
     image_analyser.LoadImage(sourceName.c_str());
 
-    std::vector<Image> faces = image_analyser.findHead();
+    // std::vector<Image> faces = image_analyser.findHead();
     // std::string filename;
     // Image* image;
     // std::cout << faces.size() << " faces" << std::endl;
@@ -32,16 +32,18 @@ int main() {
     // }
     cv::Mat camImage;
     cv::VideoCapture camera(0);
+    Image* zoomedFaces;
     double coef;
     while(true) {
         camera.read(camImage);
         image_analyser.LoadImage(camImage);
-        camImage = *image_analyser.getZoomedFaces(0.3).getMat();
+        zoomedFaces = image_analyser.getZoomedFaces(0.3);
+        camImage = *zoomedFaces->getMat();
         coef = image_analyser.getCoef(480, camImage.cols, camImage.rows);
-        std::cout << "coef = " << coef << std::endl;
         cv::resize(camImage, camImage, cv::Size(), coef, coef, cv::INTER_LINEAR );
         cv::imshow("Image", camImage);
         cv::waitKey(1);
+        delete zoomedFaces;
     }
     cv::destroyAllWindows();
     return 0;

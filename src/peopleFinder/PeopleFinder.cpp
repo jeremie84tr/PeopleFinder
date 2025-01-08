@@ -66,7 +66,7 @@ int PeopleFinder::findArg(char *arg) {
 
 int PeopleFinder::runArg(int argn) {
     switch (argn) {
-        case 0: {printArgs();return 0}
+        case 0: {printArgs();return 0;}
         case 1:
         default: return 0;
     }

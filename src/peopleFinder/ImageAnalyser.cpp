@@ -21,10 +21,10 @@ using namespace cv;
 using namespace cv::face;
 
 
-ImageAnalyser::ImageAnalyser(): image(0,0,0,nullptr), actualX(0), actualY(0), actualHeight(0), actualWidth(0) {
+ImageAnalyser::ImageAnalyser(): image(new Image(0,0,0,nullptr)), actualX(0), actualY(0), actualHeight(0), actualWidth(0), face_cascade(), face_cascade_loaded(false) {
 }
 
-ImageAnalyser::ImageAnalyser(Image image): image(0,0,0,nullptr), actualX(0), actualY(0), actualWidth(0), actualHeight(0) {
+ImageAnalyser::ImageAnalyser(Image image): image(nullptr), actualX(0), actualY(0), actualWidth(0), actualHeight(0), face_cascade(), face_cascade_loaded(false) {
     this->image = image.crop(0,0,image.getWidth(),image.getHeight());
 }
 
@@ -33,14 +33,20 @@ ImageAnalyser::ImageAnalyser(Image image): image(0,0,0,nullptr), actualX(0), act
  * @param filename the filename/filepath of the image you want to load
  */
 void ImageAnalyser::LoadImage(const char *filename) {
+    if (this->image != nullptr) {
+        delete this->image; // Free existing memory
+    }
     // Load the image
     int width, height, channels;
     unsigned char* data = stbi_load(filename, &width, &height, &channels, 0);
-    this->image = Image(width, height, channels, data);
+    this->image = new Image(width, height, channels, data);
 }
 
 void ImageAnalyser::LoadImage(cv::Mat image) {
-    this->image = Image(image.cols, image.rows, image.channels(), image.data);
+    if (this->image != nullptr) {
+        delete this->image; // Free existing memory
+    }
+    this->image = new Image(image.cols, image.rows, image.channels(), image.data);
 }
 
 
@@ -48,10 +54,12 @@ void ImageAnalyser::LoadImage(cv::Mat image) {
  * 
  * @return The vector of all the heads found in the image
  */
-std::vector<Image> ImageAnalyser::findHead() {
+std::vector<Image*> ImageAnalyser::findHead() {
 
-    CascadeClassifier face_cascade;
-    face_cascade.load("data/cascade/haarcascade_frontalface_default.xml");
+    if (!this->face_cascade_loaded) {
+        this->face_cascade.load("data/cascade/haarcascade_frontalface_default.xml");
+        this->face_cascade_loaded = true;
+    }
 
     Mat *img = this->getImage()->getMat();
 
@@ -82,14 +90,15 @@ std::vector<Image> ImageAnalyser::findHead() {
 
     std::vector< std::vector<Point2f> > shapes;
 
-    std::vector<Image> images;
+    std::vector<Image*> images;
 
     std::cout << faces.size() << " faces found" << std::endl;
 
     for ( size_t i = 0; i < faces.size(); i++ )
     {
-        images.push_back(this->image.crop(faces[i].x / coef, faces[i].y / coef, faces[i].width / coef, faces[i].height / coef));
+        images.push_back(this->image->crop(faces[i].x / coef, faces[i].y / coef, faces[i].width / coef, faces[i].height / coef));
     }
+    shapes.clear();
 
     return images;
 }
@@ -111,9 +120,12 @@ double ImageAnalyser::getCoef(double objectiveWidth, double width, double height
 }
 
 
-Image ImageAnalyser::getZoomedFaces(double coef_adaptation) {
-    CascadeClassifier face_cascade;
-    face_cascade.load("data/cascade/haarcascade_frontalface_default.xml");
+Image* ImageAnalyser::getZoomedFaces(double coef_adaptation) {
+
+    if (!this->face_cascade_loaded) {
+        this->face_cascade.load("data/cascade/haarcascade_frontalface_default.xml");
+        this->face_cascade_loaded = true;
+    }
 
     Mat *img = this->getImage()->getMat();
 
@@ -132,13 +144,9 @@ Image ImageAnalyser::getZoomedFaces(double coef_adaptation) {
     }
     equalizeHist( gray, gray );
 
-    std::cout << "apres gray" << std::endl;
-
     face_cascade.detectMultiScale( gray, faces, 1.1, 3,0, Size(30, 30) );
 
-    std::vector< std::vector<Point2f> > shapes;
-
-    std::vector<Image> images;
+    delete img;
 
     std::cout << faces.size() << " faces found" << std::endl;
 
@@ -163,11 +171,13 @@ Image ImageAnalyser::getZoomedFaces(double coef_adaptation) {
         }
     }
 
+    faces.clear();
+
     if (minX == -1) {
         minX = 0;
         minY = 0;
-        maxX = this->image.getWidth() * coef;
-        maxY = this->image.getHeight() * coef;
+        maxX = this->image->getWidth() * coef;
+        maxY = this->image->getHeight() * coef;
     }
 
     actualX += (minX - actualX) * coef_adaptation;
@@ -175,7 +185,7 @@ Image ImageAnalyser::getZoomedFaces(double coef_adaptation) {
     actualWidth += ((maxX - minX) - actualWidth) * coef_adaptation;
     actualHeight += ((maxY - minY) - actualHeight) * coef_adaptation;
 
-    return this->image.crop(actualX / coef, actualY / coef, actualWidth / coef, actualHeight / coef);
+    return this->image->crop(actualX / coef, actualY / coef, actualWidth / coef, actualHeight / coef);
 }
 
 
@@ -184,11 +194,11 @@ Image ImageAnalyser::getZoomedFaces(double coef_adaptation) {
  * @param filename the filename/filepath where you want to save the image
  */
 void ImageAnalyser::SaveImage(const char * filename) {
-    this->image.save(filename);
+    this->image->save(filename);
 }
 
 Image *ImageAnalyser::getImage() {
-    return &this->image;
+    return this->image;
 }
 
 
